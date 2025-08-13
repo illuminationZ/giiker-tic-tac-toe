@@ -1,0 +1,28 @@
+{
+  "name": "GiiKER Tic-Tac-Toe Online",
+  "short_name": "GiiKER TTT",
+  "description": "Play Infinite Tic-Tac-Toe online with friends. Experience the revolutionary game mode where pieces disappear after placing 3, making every move strategic.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "entertainment", "strategy"],
+  "lang": "en",
+  "scope": "/",
+  "prefer_related_applications": false
+}

@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Game relationships
+  gamesAsPlayer1 Game[]     @relation("Player1")
+  gamesAsPlayer2 Game[]     @relation("Player2")
+  moves          GameMove[]
+
+  // Friends relationships
+  sentFriendRequests     Friend[] @relation("FriendSender")
+  receivedFriendRequests Friend[] @relation("FriendReceiver")
+
+  // User stats
+  gamesWon   Int @default(0)
+  gamesLost  Int @default(0)
+  gamesDrawn Int @default(0)
+  totalGames Int @default(0)
+  winStreak  Int @default(0)
+  bestStreak Int @default(0)
+
+  @@map("users")
+}
+
+model Game {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  startedAt DateTime?
+  endedAt   DateTime?
+
+  // Players
+  player1Id String
+  player2Id String?
+  player1   User    @relation("Player1", fields: [player1Id], references: [id], onDelete: Cascade)
+  player2   User?   @relation("Player2", fields: [player2Id], references: [id], onDelete: Cascade)
+
+  // Game state
+  status      String  @default("WAITING") // WAITING, IN_PROGRESS, COMPLETED, CANCELLED
+  gameState   String  @default("[[null,null,null],[null,null,null],[null,null,null]]") // JSON string of 3x3 board
+  currentTurn String? // player ID whose turn it is
+  winner      String? // player ID of winner
+  isDraw      Boolean @default(false)
+
+  // Game settings
+  isPrivate Boolean @default(false)
+  gameCode  String? @unique // for private games
+  maxMoves  Int     @default(50) // max moves per game to prevent infinite games
+
+  // Relationships
+  moves GameMove[]
+
+  @@map("games")
+}
+
+model GameMove {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  playerId String
+  player   User   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  position    Int // 0-8 for board position (0=top-left, 8=bottom-right)
+  moveNumber  Int // sequence number in the game
+  isRemoval   Boolean @default(false) // true if this move caused a piece to be removed
+  removedFrom Int? // position of removed piece (for infinite tic-tac-toe)
+
+  @@map("game_moves")
+}
+
+model Friend {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  senderId   String
+  receiverId String
+  sender     User   @relation("FriendSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User   @relation("FriendReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  status String @default("PENDING") // PENDING, ACCEPTED, BLOCKED
+
+  @@unique([senderId, receiverId])
+  @@map("friends")
+}
+
+// Note: Using String fields instead of enums for SQLite compatibility
+// GameStatus: WAITING, IN_PROGRESS, COMPLETED, CANCELLED
+// FriendStatus: PENDING, ACCEPTED, BLOCKED
