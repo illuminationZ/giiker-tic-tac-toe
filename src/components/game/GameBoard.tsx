@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { deserializeGameState, GameState, Position } from "@/lib/game-logic";
+import { deserializeGameState, GameState } from "@/lib/game-logic";
 import { X, Circle, Zap, Clock, Trophy } from "lucide-react";
 
 interface GameBoardProps {
@@ -171,11 +171,33 @@ export default function GameBoard({
       const state = deserializeGameState(gameState);
       setParsedGameState(state);
 
-      // Calculate winning positions
+      // Calculate winning positions from winning line if available
       if (state.winningLine) {
         const positions = state.winningLine.map((pos) => pos.row * 3 + pos.col);
         setWinningPositions(positions);
       } else {
+        // Try to detect winning positions from the board state
+        const board = Array.isArray(state.board[0])
+          ? state.board.flat()
+          : state.board;
+        const winLines = [
+          [0, 1, 2],
+          [3, 4, 5],
+          [6, 7, 8], // rows
+          [0, 3, 6],
+          [1, 4, 7],
+          [2, 5, 8], // columns
+          [0, 4, 8],
+          [2, 4, 6], // diagonals
+        ];
+
+        for (const line of winLines) {
+          const [a, b, c] = line;
+          if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+            setWinningPositions(line);
+            return;
+          }
+        }
         setWinningPositions([]);
       }
     } catch (error) {
@@ -204,10 +226,15 @@ export default function GameBoard({
   const getMoveAge = (position: number): number | undefined => {
     if (!parsedGameState) return undefined;
 
-    const moves = parsedGameState.moves;
+    const moves = parsedGameState.moveHistory;
+    if (!moves || moves.length === 0) return undefined;
+
+    // Filter moves for this position
     const positionMoves = moves.filter((move) => {
-      const movePos = move.position.row * 3 + move.position.col;
-      return movePos === position;
+      if (typeof move.position === "number") {
+        return move.position === position;
+      }
+      return move.position.row * 3 + move.position.col === position;
     });
 
     if (positionMoves.length === 0) return undefined;
@@ -216,11 +243,7 @@ export default function GameBoard({
     const playerMoves = moves.filter(
       (move) => move.player === latestMove.player,
     );
-    const moveIndex = playerMoves.findIndex(
-      (move) =>
-        move.position.row === latestMove.position.row &&
-        move.position.col === latestMove.position.col,
-    );
+    const moveIndex = playerMoves.findIndex((move) => move === latestMove);
 
     return playerMoves.length - moveIndex - 1;
   };
@@ -300,27 +323,27 @@ export default function GameBoard({
       {/* Game Board */}
       <div className="relative">
         <div className="grid grid-cols-3 gap-2 sm:gap-3 p-6 bg-game-board rounded-xl shadow-game">
-          {parsedGameState.board.map((row, rowIndex) =>
-            row.map((cell, colIndex) => {
-              const position = rowIndex * 3 + colIndex;
-              const isWinningCell = winningPositions.includes(position);
-              const moveAge = getMoveAge(position);
+          {(Array.isArray(parsedGameState.board[0])
+            ? parsedGameState.board.flat()
+            : parsedGameState.board
+          ).map((cell, position) => {
+            const isWinningCell = winningPositions.includes(position);
+            const moveAge = getMoveAge(position);
 
-              return (
-                <GameCell
-                  key={position}
-                  value={cell}
-                  position={position}
-                  isWinningCell={isWinningCell}
-                  isGhostPiece={false}
-                  isClickable={isMyTurn}
-                  onClick={() => onMakeMove(position)}
-                  playerSymbol={playerSymbol}
-                  moveAge={moveAge}
-                />
-              );
-            }),
-          )}
+            return (
+              <GameCell
+                key={position}
+                value={cell}
+                position={position}
+                isWinningCell={isWinningCell}
+                isGhostPiece={false}
+                isClickable={isMyTurn}
+                onClick={() => onMakeMove(position)}
+                playerSymbol={playerSymbol}
+                moveAge={moveAge}
+              />
+            );
+          })}
         </div>
 
         {/* Loading overlay */}
@@ -336,7 +359,10 @@ export default function GameBoard({
         <div className="grid grid-cols-2 gap-4 w-full max-w-md text-center">
           <div className="bg-white dark:bg-slate-800 rounded-lg p-3 shadow">
             <div className="text-2xl font-bold text-game-x">
-              {parsedGameState.moves.filter((m) => m.player === "X").length}
+              {
+                parsedGameState.moveHistory.filter((m) => m.player === "X")
+                  .length
+              }
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               Player 1 Moves
@@ -344,7 +370,10 @@ export default function GameBoard({
           </div>
           <div className="bg-white dark:bg-slate-800 rounded-lg p-3 shadow">
             <div className="text-2xl font-bold text-game-o">
-              {parsedGameState.moves.filter((m) => m.player === "O").length}
+              {
+                parsedGameState.moveHistory.filter((m) => m.player === "O")
+                  .length
+              }
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               Player 2 Moves
@@ -355,16 +384,21 @@ export default function GameBoard({
 
       {/* Move History (for debugging) */}
       {process.env.NODE_ENV === "development" &&
-        parsedGameState.moves.length > 0 && (
+        parsedGameState.moveHistory.length > 0 && (
           <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 max-w-md w-full">
             <h4 className="font-medium mb-2">Move History:</h4>
             <div className="space-y-1 text-sm max-h-32 overflow-y-auto">
-              {parsedGameState.moves.slice(-10).map((move, index) => (
+              {parsedGameState.moveHistory.slice(-10).map((move, index) => (
                 <div key={index} className="flex justify-between">
                   <span>
-                    {move.player}: ({move.position.row}, {move.position.col})
+                    {move.player}:{" "}
+                    {typeof move.position === "number"
+                      ? move.position
+                      : `(${move.position.row}, ${move.position.col})`}
                   </span>
-                  <span className="text-gray-500">#{move.moveNumber}</span>
+                  <span className="text-gray-500">
+                    #{(move as any).moveNumber || index + 1}
+                  </span>
                 </div>
               ))}
             </div>

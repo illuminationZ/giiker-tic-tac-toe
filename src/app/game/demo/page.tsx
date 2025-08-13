@@ -13,19 +13,18 @@ export default function DemoGamePage() {
   const router = useRouter();
 
   const [gameState, setGameState] = useState(() => ({
-    board: [
-      [null, null, null],
-      [null, null, null],
-      [null, null, null],
-    ] as (string | null)[][],
-    moves: [] as Array<{
-      player: string;
-      position: { row: number; col: number };
-      moveNumber: number;
-      timestamp: string;
+    board: Array(9).fill(null),
+    currentPlayer: "X" as "X" | "O" | null,
+    status: "playing" as "waiting" | "playing" | "finished",
+    winner: null as "X" | "O" | "draw" | null,
+    moveHistory: [] as Array<{
+      player: "X" | "O";
+      position: number;
+      timestamp: number;
     }>,
-    gameMode: "infinite" as const,
-    winningLine: null as any,
+    playerPieces: { X: [], O: [] },
+    gameMode: "demo" as const,
+    winningLine: null as Array<{ row: number; col: number }> | null,
   }));
 
   const [currentTurn, setCurrentTurn] = useState("player1");
@@ -63,30 +62,46 @@ export default function DemoGamePage() {
     if (gameState.board[row][col] !== null) return;
 
     // Make the move
-    const newBoard = gameState.board.map((row) => [...row]);
-    newBoard[row][col] = currentTurn === "player1" ? "X" : "O";
+    const newBoard = [...gameState.board];
+    const currentPlayer = currentTurn === "player1" ? "X" : "O";
+    newBoard[position] = currentPlayer;
 
     // Add to moves history
-    const newMoves = [
-      ...gameState.moves,
+    const newMoveHistory = [
+      ...gameState.moveHistory,
       {
-        player: currentTurn === "player1" ? "X" : "O",
-        position: { row, col },
-        moveNumber: gameState.moves.length + 1,
-        timestamp: new Date().toISOString(),
+        player: currentPlayer,
+        position,
+        timestamp: Date.now(),
       },
     ];
 
+    // Update player pieces
+    const newPlayerPieces = { ...gameState.playerPieces };
+    newPlayerPieces[currentPlayer] = [
+      ...newPlayerPieces[currentPlayer],
+      position,
+    ];
+
+    // Remove oldest piece if more than 3
+    if (newPlayerPieces[currentPlayer].length > 3) {
+      const oldestPosition = newPlayerPieces[currentPlayer].shift()!;
+      newBoard[oldestPosition] = null;
+    }
+
     // Check for win
-    const winningLine = checkWin(newBoard);
-    const isWin = winningLine !== null;
-    const isDrawGame = !isWin && newBoard.flat().every((cell) => cell !== null);
+    const isWin = checkWin(newBoard);
+    const isDrawGame = !isWin && newBoard.every((cell) => cell !== null);
 
     const newGameState = {
+      ...gameState,
       board: newBoard,
-      moves: newMoves,
-      gameMode: "infinite" as const,
-      winningLine,
+      currentPlayer: currentPlayer,
+      status: isWin || isDrawGame ? "finished" : "playing",
+      winner: isWin ? currentPlayer : isDrawGame ? "draw" : null,
+      moveHistory: newMoveHistory,
+      playerPieces: newPlayerPieces,
+      winningLine: null,
     };
 
     setGameState(newGameState);
@@ -103,79 +118,36 @@ export default function DemoGamePage() {
     }
   };
 
-  const checkWin = (board: (string | null)[][]) => {
-    // Check rows
-    for (let i = 0; i < 3; i++) {
-      if (
-        board[i][0] &&
-        board[i][0] === board[i][1] &&
-        board[i][1] === board[i][2]
-      ) {
-        return [
-          { row: i, col: 0 },
-          { row: i, col: 1 },
-          { row: i, col: 2 },
-        ];
+  const checkWin = (board: (string | null)[]) => {
+    const winPatterns = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8], // rows
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8], // columns
+      [0, 4, 8],
+      [2, 4, 6], // diagonals
+    ];
+
+    for (const pattern of winPatterns) {
+      const [a, b, c] = pattern;
+      if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+        return true;
       }
     }
-
-    // Check columns
-    for (let j = 0; j < 3; j++) {
-      if (
-        board[0][j] &&
-        board[0][j] === board[1][j] &&
-        board[1][j] === board[2][j]
-      ) {
-        return [
-          { row: 0, col: j },
-          { row: 1, col: j },
-          { row: 2, col: j },
-        ];
-      }
-    }
-
-    // Check diagonals
-    if (
-      board[0][0] &&
-      board[0][0] === board[1][1] &&
-      board[1][1] === board[2][2]
-    ) {
-      return [
-        { row: 0, col: 0 },
-        { row: 1, col: 1 },
-        { row: 2, col: 2 },
-      ];
-    }
-
-    if (
-      board[0][2] &&
-      board[0][2] === board[1][1] &&
-      board[1][1] === board[2][0]
-    ) {
-      return [
-        { row: 0, col: 2 },
-        { row: 1, col: 1 },
-        { row: 2, col: 0 },
-      ];
-    }
-
-    return null;
+    return false;
   };
 
   const resetGame = () => {
     setGameState({
-      board: [
-        [null, null, null],
-        [null, null, null],
-        [null, null, null],
-      ] as (string | null)[][],
-      moves: [] as Array<{
-        player: string;
-        position: { row: number; col: number };
-        moveNumber: number;
-        timestamp: string;
-      }>,
-      gameMode: "infinite",
+      board: Array(9).fill(null),
+      currentPlayer: "X",
+      status: "playing",
+      winner: null,
+      moveHistory: [],
+      playerPieces: { X: [], O: [] },
+      gameMode: "demo",
       winningLine: null,
     });
     setCurrentTurn("player1");
@@ -199,7 +171,7 @@ export default function DemoGamePage() {
     resetGame();
   };
 
-  const isMyTurn = currentTurn === "player1";
+  const isMyTurn = selectedPlayer === currentTurn;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
@@ -234,11 +206,11 @@ export default function DemoGamePage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Player Setup */}
         {showPlayerSetup && (
-          <div className="max-w-md mx-auto bg-white dark:bg-slate-900 rounded-xl shadow-lg p-6 mb-8">
+          <div className="max-w-md mx-auto bg-white dark:bg-slate-900 rounded-xl shadow-lg p-6 mb-8 space-y-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
               Set Up Players
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Player 1 (X)
@@ -301,13 +273,19 @@ export default function DemoGamePage() {
                 </div>
               </div>
 
-              <Button
-                onClick={handleStartGame}
-                className="w-full"
-                disabled={!selectedPlayer}
-              >
-                Start Game
-              </Button>
+              <div>
+                <Button
+                  onClick={handleStartGame}
+                  className="w-full"
+                  disabled={!selectedPlayer}
+                >
+                  Start Game
+                </Button>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 text-center">
+                  Both players will use this device to play. When it's your
+                  turn, make your move!
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -348,7 +326,7 @@ export default function DemoGamePage() {
             <GameBoard
               gameState={JSON.stringify(gameState)}
               currentTurn={currentTurn}
-              currentUserId="player1"
+              currentUserId={selectedPlayer || "player1"}
               player1Id="player1"
               player2Id="player2"
               winner={winner}
