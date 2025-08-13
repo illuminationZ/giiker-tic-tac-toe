@@ -1,6 +1,6 @@
-# GiiKER Tic-Tac-Toe Online 🎮
+# Tic-Tac-Toe Online 🎮
 
-A revolutionary online multiplayer Tic-Tac-Toe game inspired by the GiiKER Tic-Tac-Toe Bolt, featuring the innovative **Infinite Mode** where strategy truly matters!
+A revolutionary online multiplayer Tic-Tac-Toe game inspired by an innovative Tic-Tac-Toe Bolt, featuring the **Infinite Mode** where strategy truly matters!
 
 ![Game Preview](https://via.placeholder.com/800x400/0ea5e9/ffffff?text=GiiKER+Tic-Tac-Toe+Online)
 
@@ -23,9 +23,9 @@ A revolutionary online multiplayer Tic-Tac-Toe game inspired by the GiiKER Tic-T
 - **Dark/Light Theme**: Toggle between themes for comfortable gaming
 - **Offline-first Database**: SQLite for development, easily scalable to PostgreSQL
 
-## 🚀 What Makes This Special?
+### 🚀 What Makes This Special?
 
-Unlike traditional Tic-Tac-Toe where games often end in draws, **Infinite Mode** introduces strategic depth:
+Unlike traditional Tic-Tac-Toe, where games often end in draws, **Infinite Mode** introduces strategic depth:
 
 - **Limited Pieces**: Only 3 pieces per player on the board at any time
 - **Dynamic Board**: Oldest pieces disappear when you place your 4th piece
@@ -44,7 +44,7 @@ Unlike traditional Tic-Tac-Toe where games often end in draws, **Infinite Mode**
 ## 📦 Installation & Setup
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js 18+
 - npm 8+
 
 ### 1. Clone the Repository
@@ -255,26 +255,24 @@ npm run build
 - [ ] **Achievements**: Unlock achievements for various milestones
 - [ ] **Rating System**: ELO-based player rankings
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 🙏 Acknowledgments
 
-- **GiiKER**: For inspiring this project with their innovative Tic-Tac-Toe Bolt game
+This is a personal, experimental project and does not have a license.
+
+
+- For inspiring this project with an innovative Tic-Tac-Toe Bolt game
 - **Next.js Team**: For the amazing React framework
 - **Socket.IO**: For real-time communication capabilities
 - **Tailwind CSS**: For the utility-first CSS framework
 - **Prisma**: For the excellent database toolkit
 
-## 📞 Support
+This project is not officially supported and was created as a vibe coding exercise.
 
-- **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-repo/discussions)
-- **Email**: support@your-domain.com
+**Note:** This is an independent, experimental project *inspired by* the GiiKER Tic-Tac-Toe Bolt, and it was not created by GiiKER. This project is not affiliated with or endorsed by GiiKER.
+
 
 ---
 
-**Made with ❤️ and ⚡ by the GiiKER Tic-Tac-Toe Team**
+**Made with ❤️ and ⚡ by the IlluminationZ**
 
 Start playing now and experience the revolution in Tic-Tac-Toe! 🎮✨
