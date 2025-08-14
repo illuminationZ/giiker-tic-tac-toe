@@ -17,13 +17,14 @@ export default function DemoGamePage() {
     currentPlayer: "X" as "X" | "O" | null,
     status: "playing" as "waiting" | "playing" | "finished",
     winner: null as "X" | "O" | "draw" | null,
-    moveHistory: [] as Array<{
+    moves: [] as Array<{
       player: "X" | "O";
-      position: number;
-      timestamp: number;
+      position: { row: number; col: number };
+      moveNumber: number;
+      timestamp: string;
     }>,
-    playerPieces: { X: [], O: [] },
-    gameMode: "demo" as const,
+    playerPieces: { X: [] as number[], O: [] as number[] },
+    gameMode: "infinite" as const,
     winningLine: null as Array<{ row: number; col: number }> | null,
   }));
 
@@ -55,11 +56,8 @@ export default function DemoGamePage() {
   const handleMakeMove = (position: number) => {
     if (isGameOver || winner) return;
 
-    const row = Math.floor(position / 3);
-    const col = position % 3;
-
     // Check if the cell is already occupied
-    if (gameState.board[row][col] !== null) return;
+    if (gameState.board[position] !== null) return;
 
     // Make the move
     const newBoard = [...gameState.board];
@@ -67,12 +65,13 @@ export default function DemoGamePage() {
     newBoard[position] = currentPlayer;
 
     // Add to moves history
-    const newMoveHistory = [
-      ...gameState.moveHistory,
+    const newMoves = [
+      ...gameState.moves,
       {
         player: currentPlayer,
-        position,
-        timestamp: Date.now(),
+        position: { row: Math.floor(position / 3), col: position % 3 },
+        moveNumber: gameState.moves.length + 1,
+        timestamp: new Date().toISOString(),
       },
     ];
 
@@ -96,10 +95,15 @@ export default function DemoGamePage() {
     const newGameState = {
       ...gameState,
       board: newBoard,
-      currentPlayer: currentPlayer,
-      status: isWin || isDrawGame ? "finished" : "playing",
-      winner: isWin ? currentPlayer : isDrawGame ? "draw" : null,
-      moveHistory: newMoveHistory,
+      currentPlayer: currentPlayer as "X" | "O",
+      status: (isWin || isDrawGame ? "finished" : "playing") as "playing" | "finished",
+      winner: (isWin ? currentPlayer : isDrawGame ? "draw" : null) as "X" | "O" | "draw" | null,
+      moves: newMoves as Array<{
+        player: "X" | "O";
+        position: { row: number; col: number };
+        moveNumber: number;
+        timestamp: string;
+      }>,
       playerPieces: newPlayerPieces,
       winningLine: null,
     };
@@ -145,9 +149,9 @@ export default function DemoGamePage() {
       currentPlayer: "X",
       status: "playing",
       winner: null,
-      moveHistory: [],
-      playerPieces: { X: [], O: [] },
-      gameMode: "demo",
+      moves: [],
+      playerPieces: { X: [] as number[], O: [] as number[] },
+      gameMode: "infinite",
       winningLine: null,
     });
     setCurrentTurn("player1");
